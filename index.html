@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>혼디 HONDI · 제주 향수공방</title>
+<meta name="description" content="제주시청 신성로10길 3. 곶자왈과 바다, 감귤창고의 공기를 담은 향수공방 혼디. 나만의 시그니처 향수를 조향하는 원데이 클래스와 제주 향 라인업.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* ============================================================
+   HONDI · 제주 향수공방 랜딩페이지
+   단일 HTML 파일 / 외부 의존성: Leaflet(지도)만 사용
+   ============================================================ */
+
+:root{
+  /* 제주 팔레트 */
+  --basalt:      #161A18;   /* 현무암 */
+  --basalt-2:    #242A26;
+  --ink:         #0C0E0D;
+  --paper:       #F6F2E9;   /* 한지 / 화산재 백사장 */
+  --paper-2:     #EDE7DA;
+  --sea:         #0F7C7A;   /* 제주 바다 */
+  --sea-light:   #2FB3A8;
+  --tangerine:   #EE8A2B;   /* 감귤 */
+  --canola:      #F2C230;   /* 유채 */
+  --camellia:    #B93A38;   /* 동백 */
+  --moss:        #5B7A54;   /* 곶자왈 이끼 */
+  --mist:        rgba(246,242,233,.62);
+
+  --font-display: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-en: "Cormorant Garamond", "Times New Roman", serif;
+
+  --maxw: 1180px;
+  --r: 18px;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--basalt);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:-.01em;
+  overflow-x:hidden;
+}
+img{ max-width:100%; display:block; }
+a{ color:inherit; text-decoration:none; }
+button{ font-family:inherit; cursor:pointer; }
+h1,h2,h3,h4{ line-height:1.25; letter-spacing:-.03em; margin:0; font-weight:700; }
+
+.wrap{ width:100%; max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+.eyebrow{
+  font-size:12px; letter-spacing:.28em; text-transform:uppercase;
+  font-weight:700; color:var(--sea); margin-bottom:14px;
+}
+.eyebrow.on-dark{ color:var(--canola); }
+.section{ padding:110px 0; position:relative; }
+.section-head{ max-width:660px; margin-bottom:52px; }
+.section-head h2{ font-size:clamp(28px,4.2vw,44px); margin-bottom:16px; }
+.section-head p{ color:#5A605B; font-size:17px; margin:0; }
+.on-dark .section-head p, .dark .section-head p{ color:var(--mist); }
+
+/* ---------- NAV ---------- */
+header.nav{
+  position:fixed; inset:0 0 auto 0; z-index:900;
+  padding:16px 0;
+  transition:background .35s ease, backdrop-filter .35s ease, padding .35s ease, box-shadow .35s;
+}
+header.nav.scrolled{
+  background:rgba(246,242,233,.88);
+  backdrop-filter:blur(14px);
+  padding:10px 0;
+  box-shadow:0 1px 0 rgba(22,26,24,.08);
+}
+.nav-inner{ display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.logo{ display:flex; align-items:baseline; gap:10px; color:var(--paper); transition:color .35s; }
+.scrolled .logo{ color:var(--basalt); }
+.logo .mark{ font-size:22px; font-weight:800; letter-spacing:-.04em; }
+.logo .sub{ font-size:11px; letter-spacing:.3em; opacity:.72; text-transform:uppercase; }
+.nav-links{ display:flex; gap:30px; align-items:center; }
+.nav-links a{
+  font-size:14px; font-weight:600; color:var(--paper); opacity:.86; transition:color .35s,opacity .2s;
+}
+.scrolled .nav-links a{ color:var(--basalt); }
+.nav-links a:hover{ opacity:1; }
+.nav-cta{
+  background:var(--tangerine); color:#fff !important; opacity:1 !important;
+  padding:10px 20px; border-radius:999px; font-size:14px; font-weight:700;
+  transition:transform .18s ease, background .2s;
+}
+.nav-cta:hover{ transform:translateY(-2px); background:#e07b18; }
+.nav-toggle{ display:none; background:none; border:0; color:var(--paper); font-size:24px; padding:4px 8px; }
+.scrolled .nav-toggle{ color:var(--basalt); }
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative; min-height:100svh; display:flex; align-items:center;
+  background:
+    radial-gradient(120% 90% at 78% 18%, rgba(238,138,43,.30) 0%, transparent 55%),
+    radial-gradient(100% 80% at 12% 82%, rgba(15,124,122,.42) 0%, transparent 60%),
+    linear-gradient(165deg,#0E1211 0%, #1B211E 45%, #10201F 100%);
+  color:var(--paper); overflow:hidden; padding:140px 0 90px;
+}
+.hero::after{
+  /* 화산 송이 텍스처 */
+  content:""; position:absolute; inset:0; opacity:.5; pointer-events:none;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.05) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,.04) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 45% 85%, rgba(255,255,255,.045) 0 1px, transparent 1.5px);
+  background-size:120px 120px, 90px 90px, 160px 160px;
+}
+.hero-grid{
+  position:relative; z-index:2;
+  display:grid; grid-template-columns:1.15fr .85fr; gap:56px; align-items:center;
+}
+.hero h1{
+  font-size:clamp(38px,6.2vw,72px); font-weight:800; letter-spacing:-.045em; margin-bottom:24px;
+}
+.hero h1 .accent{
+  background:linear-gradient(105deg,var(--canola),var(--tangerine) 55%,var(--camellia));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.hero p.lead{ font-size:clamp(16px,1.9vw,19px); color:var(--mist); max-width:530px; margin:0 0 36px; }
+.hero-actions{ display:flex; gap:14px; flex-wrap:wrap; }
+.btn{
+  display:inline-flex; align-items:center; gap:9px;
+  padding:15px 28px; border-radius:999px; font-weight:700; font-size:15px;
+  border:1px solid transparent; transition:transform .18s ease, background .2s, border-color .2s;
+}
+.btn:hover{ transform:translateY(-2px); }
+.btn-primary{ background:var(--tangerine); color:#fff; }
+.btn-primary:hover{ background:#e07b18; }
+.btn-ghost{ border-color:rgba(246,242,233,.34); color:var(--paper); }
+.btn-ghost:hover{ border-color:var(--paper); background:rgba(246,242,233,.08); }
+.btn-dark{ background:var(--basalt); color:var(--paper); }
+.btn-outline{ border-color:rgba(22,26,24,.22); color:var(--basalt); }
+.btn-outline:hover{ border-color:var(--basalt); }
+
+.hero-badges{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:26px; }
+.badge{
+  font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px;
+  background:rgba(246,242,233,.10); border:1px solid rgba(246,242,233,.18); color:var(--mist);
+}
+
+/* 히어로 향 카드 */
+.scent-card{
+  background:linear-gradient(160deg, rgba(246,242,233,.11), rgba(246,242,233,.04));
+  border:1px solid rgba(246,242,233,.16);
+  border-radius:26px; padding:30px; backdrop-filter:blur(8px);
+}
+.scent-card .no{ font-family:var(--font-en); font-size:56px; line-height:1; color:var(--canola); font-weight:600; }
+.scent-card h3{ font-size:24px; margin:8px 0 4px; }
+.scent-card .en{ font-size:12px; letter-spacing:.24em; color:var(--mist); text-transform:uppercase; margin-bottom:20px; }
+.notes{ display:grid; gap:12px; margin-bottom:22px; }
+.note-row{ display:flex; align-items:center; gap:12px; font-size:14px; color:var(--mist); }
+.note-row b{ color:var(--paper); min-width:44px; font-size:12px; letter-spacing:.1em; }
+.bar{ flex:1; height:4px; border-radius:99px; background:rgba(246,242,233,.14); overflow:hidden; }
+.bar span{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--sea-light),var(--canola)); }
+.scent-card .rotate-hint{ font-size:12px; color:rgba(246,242,233,.45); }
+
+.scroll-cue{
+  position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:3;
+  font-size:11px; letter-spacing:.3em; color:rgba(246,242,233,.5); text-transform:uppercase;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.scroll-cue i{ display:block; width:1px; height:38px; background:linear-gradient(180deg,rgba(246,242,233,.5),transparent); animation:cue 2.2s ease-in-out infinite; }
+@keyframes cue{ 0%,100%{opacity:.25; transform:scaleY(.6);} 50%{opacity:1; transform:scaleY(1);} }
+
+/* ---------- 티커 ---------- */
+.ticker{ background:var(--basalt); color:var(--paper); padding:14px 0; overflow:hidden; white-space:nowrap; }
+.ticker-track{ display:inline-flex; gap:44px; animation:slide 34s linear infinite; will-change:transform; }
+.ticker span{ font-size:13px; letter-spacing:.22em; text-transform:uppercase; color:rgba(246,242,233,.62); }
+.ticker span::after{ content:"◍"; margin-left:44px; color:var(--tangerine); }
+@keyframes slide{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+
+/* ---------- 스토리 ---------- */
+.story{ background:var(--paper); }
+.story-grid{ display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+.story p{ font-size:17px; color:#4A504B; }
+.story .pull{
+  font-size:clamp(22px,2.6vw,30px); font-weight:700; line-height:1.5; letter-spacing:-.035em;
+  color:var(--basalt); border-left:3px solid var(--tangerine); padding-left:22px; margin:32px 0;
+}
+.stat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:2px; background:rgba(22,26,24,.1); border-radius:var(--r); overflow:hidden; }
+.stat{ background:var(--paper-2); padding:30px 26px; }
+.stat b{ display:block; font-family:var(--font-en); font-size:40px; line-height:1; color:var(--sea); font-weight:600; }
+.stat small{ display:block; margin-top:8px; font-size:13.5px; color:#5A605B; letter-spacing:-.01em; }
+
+/* ---------- 제품 탭 ---------- */
+.products{ background:var(--basalt); color:var(--paper); }
+.tabs{
+  display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:40px;
+  scrollbar-width:thin; scrollbar-color:rgba(246,242,233,.25) transparent;
+}
+.tabs::-webkit-scrollbar{ height:4px; }
+.tabs::-webkit-scrollbar-thumb{ background:rgba(246,242,233,.22); border-radius:99px; }
+.tab{
+  flex:0 0 auto; padding:12px 22px; border-radius:999px; font-size:14.5px; font-weight:600;
+  background:rgba(246,242,233,.07); border:1px solid rgba(246,242,233,.14); color:rgba(246,242,233,.75);
+  transition:all .2s ease; white-space:nowrap;
+}
+.tab:hover{ color:var(--paper); border-color:rgba(246,242,233,.34); }
+.tab[aria-selected="true"]{ background:var(--tangerine); border-color:var(--tangerine); color:#fff; }
+.tab .emo{ margin-right:7px; }
+
+.panel[hidden]{ display:none; }
+.panel-intro{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap; margin-bottom:28px; }
+.panel-intro h3{ font-size:26px; margin-bottom:8px; }
+.panel-intro p{ margin:0; color:var(--mist); font-size:15.5px; max-width:640px; }
+.panel-intro .price-from{ font-size:13px; color:var(--canola); font-weight:700; letter-spacing:.06em; white-space:nowrap; }
+
+.card-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:20px; }
+.pcard{
+  background:linear-gradient(165deg, rgba(246,242,233,.075), rgba(246,242,233,.025));
+  border:1px solid rgba(246,242,233,.13); border-radius:20px; padding:26px 24px;
+  display:flex; flex-direction:column; gap:12px;
+  transition:transform .25s ease, border-color .25s, background .25s;
+  animation:fadeUp .5s ease both;
+}
+.pcard:hover{ transform:translateY(-5px); border-color:rgba(238,138,43,.55); background:linear-gradient(165deg, rgba(238,138,43,.10), rgba(246,242,233,.03)); }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;} }
+.pcard .swatch{ width:42px; height:42px; border-radius:12px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); }
+.pcard h4{ font-size:18.5px; }
+.pcard .en{ font-family:var(--font-en); font-size:13px; letter-spacing:.16em; color:rgba(246,242,233,.5); text-transform:uppercase; margin-top:-6px; }
+.pcard p{ margin:0; font-size:14.5px; color:var(--mist); flex:1; }
+.pcard .meta{ display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid rgba(246,242,233,.1); font-size:13.5px; }
+.pcard .meta .price{ font-weight:700; color:var(--canola); }
+.pcard .meta .spec{ color:rgba(246,242,233,.5); }
+.tagline{ display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.1em; padding:4px 10px; border-radius:6px; align-self:flex-start; }
+.t-best{ background:rgba(238,138,43,.18); color:var(--tangerine); }
+.t-new{ background:rgba(47,179,168,.18); color:var(--sea-light); }
+.t-limit{ background:rgba(185,58,56,.22); color:#E8827F; }
+
+/* ---------- 클래스 ---------- */
+.classes{ background:var(--paper-2); }
+.class-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:22px; }
+.ccard{
+  background:var(--paper); border-radius:var(--r); padding:32px 28px;
+  border:1px solid rgba(22,26,24,.09); display:flex; flex-direction:column; gap:14px;
+  transition:transform .25s ease, box-shadow .25s;
+}
+.ccard:hover{ transform:translateY(-5px); box-shadow:0 18px 40px -22px rgba(22,26,24,.42); }
+.ccard.featured{ background:var(--sea); color:var(--paper); border-color:var(--sea); }
+.ccard .dur{ font-size:12px; font-weight:700; letter-spacing:.16em; color:var(--tangerine); text-transform:uppercase; }
+.ccard.featured .dur{ color:var(--canola); }
+.ccard h3{ font-size:22px; }
+.ccard ul{ margin:0; padding-left:18px; font-size:14.5px; color:#5A605B; display:grid; gap:7px; }
+.ccard.featured ul{ color:rgba(246,242,233,.82); }
+.ccard .fee{ font-size:22px; font-weight:800; letter-spacing:-.03em; margin-top:auto; padding-top:14px; }
+.ccard .fee small{ font-size:13px; font-weight:500; color:#8A908B; }
+.ccard.featured .fee small{ color:rgba(246,242,233,.6); }
+
+/* ---------- 아이디어 보드 ---------- */
+.ideas{ background:var(--paper); }
+.idea-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+.icard{
+  border:1px dashed rgba(22,26,24,.22); border-radius:var(--r); padding:26px 24px; background:#FBF8F1;
+  transition:border-color .2s, background .2s, transform .2s;
+}
+.icard:hover{ border-color:var(--tangerine); background:#fff; transform:translateY(-3px); }
+.icard .num{ font-family:var(--font-en); font-size:13px; letter-spacing:.2em; color:var(--tangerine); font-weight:700; }
+.icard h4{ font-size:19px; margin:8px 0 10px; }
+.icard p{ margin:0 0 14px; font-size:14.5px; color:#5A605B; }
+.icard .why{ font-size:13px; color:var(--sea); font-weight:600; background:rgba(15,124,122,.08); padding:8px 12px; border-radius:9px; }
+.pick-note{
+  margin-top:34px; padding:22px 26px; border-radius:var(--r); background:var(--basalt); color:var(--mist);
+  font-size:15px; display:flex; gap:16px; align-items:flex-start;
+}
+.pick-note b{ color:var(--canola); }
+
+/* ---------- 오시는 길 ---------- */
+.visit{ background:var(--basalt-2); color:var(--paper); }
+.map-layout{ display:grid; grid-template-columns:1.35fr .65fr; gap:26px; align-items:stretch; }
+#map{
+  height:520px; border-radius:var(--r); overflow:hidden; z-index:1;
+  border:1px solid rgba(246,242,233,.16); background:#1a1f1c;
+}
+.leaflet-container{ font-family:var(--font-body); background:#1a1f1c; }
+.leaflet-popup-content-wrapper{ border-radius:12px; }
+.leaflet-popup-content{ margin:14px 16px; font-size:14px; line-height:1.6; }
+.leaflet-popup-content b{ display:block; font-size:15px; margin-bottom:3px; }
+.map-side{ display:flex; flex-direction:column; gap:14px; }
+.route-card{
+  background:rgba(246,242,233,.06); border:1px solid rgba(246,242,233,.13);
+  border-radius:16px; padding:20px 22px;
+}
+.route-card h4{ font-size:16px; display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+.route-card h4 .ico{
+  width:28px; height:28px; border-radius:9px; display:grid; place-items:center; font-size:14px;
+  background:rgba(238,138,43,.18);
+}
+.route-card p{ margin:0; font-size:14px; color:var(--mist); }
+.route-card .time{ font-size:12.5px; color:var(--canola); font-weight:700; margin-top:8px; letter-spacing:.04em; }
+.map-controls{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.mbtn{
+  padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:600;
+  background:rgba(246,242,233,.07); border:1px solid rgba(246,242,233,.16); color:rgba(246,242,233,.8);
+  transition:all .2s;
+}
+.mbtn:hover{ color:var(--paper); border-color:rgba(246,242,233,.4); }
+.mbtn.active{ background:var(--sea); border-color:var(--sea); color:#fff; }
+
+.info-strip{
+  margin-top:26px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:2px; background:rgba(246,242,233,.12); border-radius:var(--r); overflow:hidden;
+}
+.info-strip div{ background:var(--basalt-2); padding:22px 24px; }
+.info-strip dt{ font-size:11.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--tangerine); font-weight:700; margin-bottom:7px; }
+.info-strip dd{ margin:0; font-size:15px; color:var(--paper); }
+.info-strip dd small{ display:block; color:rgba(246,242,233,.55); font-size:13px; margin-top:3px; }
+
+/* ---------- FAQ ---------- */
+.faq{ background:var(--paper); }
+.faq-list{ max-width:820px; }
+details.q{ border-bottom:1px solid rgba(22,26,24,.12); padding:20px 0; }
+details.q summary{
+  list-style:none; cursor:pointer; font-size:17px; font-weight:700; letter-spacing:-.02em;
+  display:flex; justify-content:space-between; gap:20px; align-items:center;
+}
+details.q summary::-webkit-details-marker{ display:none; }
+details.q summary::after{ content:"+"; font-size:22px; font-weight:400; color:var(--tangerine); transition:transform .25s; }
+details.q[open] summary::after{ transform:rotate(45deg); }
+details.q p{ margin:14px 0 0; color:#5A605B; font-size:15.5px; }
+
+/* ---------- CTA ---------- */
+.cta{
+  background:linear-gradient(140deg,var(--sea) 0%, #0B5F5E 55%, #123A39 100%);
+  color:var(--paper); text-align:center; padding:120px 0;
+}
+.cta h2{ font-size:clamp(30px,4.6vw,50px); margin-bottom:18px; }
+.cta p{ color:rgba(246,242,233,.78); font-size:18px; max-width:560px; margin:0 auto 34px; }
+.cta .hero-actions{ justify-content:center; }
+
+/* ---------- FOOTER ---------- */
+footer{ background:var(--ink); color:rgba(246,242,233,.6); padding:64px 0 40px; font-size:14px; }
+.foot-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:40px; margin-bottom:44px; }
+footer h5{ color:var(--paper); font-size:14px; letter-spacing:.14em; text-transform:uppercase; margin:0 0 16px; }
+footer ul{ list-style:none; margin:0; padding:0; display:grid; gap:9px; }
+footer a:hover{ color:var(--paper); }
+.foot-bottom{ border-top:1px solid rgba(246,242,233,.12); padding-top:24px; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; font-size:13px; }
+.fill{ color:var(--canola); font-weight:600; }
+
+/* ---------- 반응형 ---------- */
+@media (max-width:960px){
+  .hero-grid,.story-grid,.map-layout{ grid-template-columns:1fr; }
+  .foot-grid{ grid-template-columns:1fr 1fr; }
+  .section{ padding:78px 0; }
+  #map{ height:400px; }
+  .nav-links{
+    position:absolute; top:100%; right:24px; left:24px;
+    background:var(--paper); border-radius:16px; padding:18px;
+    flex-direction:column; align-items:stretch; gap:4px;
+    box-shadow:0 22px 50px -26px rgba(0,0,0,.5); display:none;
+  }
+  .nav-links.open{ display:flex; }
+  .nav-links a{ color:var(--basalt) !important; padding:10px 8px; }
+  .nav-cta{ text-align:center; margin-top:6px; }
+  .nav-toggle{ display:block; }
+}
+@media (max-width:560px){
+  .stat-grid{ grid-template-columns:1fr; }
+  .foot-grid{ grid-template-columns:1fr; }
+  .hero{ padding-top:120px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="logo">
+      <span class="mark">혼디</span>
+      <span class="sub">Hondi Jeju</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#story">브랜드</a>
+      <a href="#products">제품</a>
+      <a href="#class">원데이 클래스</a>
+      <a href="#ideas">컨셉 제안</a>
+      <a href="#visit">오시는 길</a>
+      <a href="#cta" class="nav-cta">예약하기</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기">☰</button>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="hero-badges">
+        <span class="badge">제주시청 도보 3분</span>
+        <span class="badge">당일 예약 가능</span>
+        <span class="badge">1인 조향 클래스</span>
+      </div>
+      <div class="eyebrow on-dark">Jeju Perfume Atelier</div>
+      <h1>제주의 공기를<br><span class="accent">한 병에 담습니다</span></h1>
+      <p class="lead">
+        곶자왈의 젖은 이끼, 2월의 유채밭 바람, 감귤창고의 달큰한 나무 냄새.
+        혼디는 제주에서 맡을 수 있는 순간을 향으로 옮겨 적는 향수공방입니다.
+        여행의 끝에, 당신만의 시그니처 한 병을 가져가세요.
+      </p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn btn-primary">원데이 클래스 예약 →</a>
+        <a href="#products" class="btn btn-ghost">향 라인업 보기</a>
+      </div>
+    </div>
+
+    <div class="scent-card" id="scentCard">
+      <div class="no" id="scNo">No.021</div>
+      <h3 id="scName">곶자왈</h3>
+      <div class="en" id="scEn">Gotjawal Forest</div>
+      <div class="notes" id="scNotes"></div>
+      <div class="rotate-hint">4초마다 다른 향으로 바뀝니다 · 총 8종</div>
+    </div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><i></i></div>
+</section>
+
+<!-- ===================== TICKER ===================== -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- ===================== STORY ===================== -->
+<section class="section story" id="story">
+  <div class="wrap story-grid">
+    <div>
+      <div class="eyebrow">Our Story</div>
+      <h2 style="font-size:clamp(28px,4.2vw,44px);">‘혼디’는 제주말로<br>‘함께’라는 뜻입니다</h2>
+      <p style="margin-top:20px;">
+        관광지에서 파는 똑같은 기념품 대신, 직접 만든 향 하나를 들고 돌아가는 여행.
+        혼디는 제주시청 신성로10길의 작은 1층 공간에서 시작합니다.
+        여행자와 도민이 같은 테이블에 앉아 시향지를 넘기고, 각자의 제주를 이야기하다가
+        결국 서로 다른 향을 완성해서 나가는 곳이에요.
+      </p>
+      <div class="pull">“제주에서 뭘 사갈까”가 아니라<br>“제주에서 무슨 냄새가 났더라”를 남깁니다.</div>
+      <p>
+        모든 향료는 제주산 원물(감귤 껍질·동백·삼나무·해조)에서 얻은 추출물과
+        IFRA 기준을 통과한 안전 향료를 배합해 사용합니다.
+        공병은 되가져오시면 리필해 드리고, 그만큼 값을 빼드립니다.
+      </p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><b>32</b><small>공방에서 조향 가능한<br>제주 베이스 향료</small></div>
+      <div class="stat"><b>60분</b><small>시향부터 라벨링까지<br>기본 클래스 소요 시간</small></div>
+      <div class="stat"><b>1:1</b><small>조향사가 직접 붙는<br>테이블 응대 방식</small></div>
+      <div class="stat"><b>∞</b><small>레시피는 저장되어<br>언제든 재구매 가능</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRODUCTS (TABS) ===================== -->
+<section class="section products dark" id="products">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow on-dark">Collection</div>
+      <h2>제주에서만 만들 수 있는 향</h2>
+      <p>여덟 개의 카테고리, 모두 같은 향 라이브러리를 씁니다. 마음에 든 향 하나를 정하면 향수로도, 디퓨저로도, 차량용으로도 가져갈 수 있어요.</p>
+    </div>
+
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="panels"></div>
+  </div>
+</section>
+
+<!-- ===================== CLASS ===================== -->
+<section class="section classes" id="class">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">One-day Class</div>
+      <h2>손에 남는 제주 기념품</h2>
+      <p>예약 없이 오셔도 자리가 있으면 바로 시작합니다. 제작한 향은 당일 바로 가져가실 수 있어요.</p>
+    </div>
+    <div class="class-grid">
+      <div class="ccard featured">
+        <div class="dur">60분 · 대표 클래스</div>
+        <h3>나만의 시그니처 퍼퓸</h3>
+        <ul>
+          <li>32종 시향 후 탑·미들·베이스 직접 선택</li>
+          <li>오드퍼퓸 50ml 1병 + 시향 카드</li>
+          <li>이름·날짜 각인 라벨 제작</li>
+          <li>레시피 저장 → 이후 온라인 재구매</li>
+        </ul>
+        <div class="fee">69,000원 <small>/ 1인</small></div>
+      </div>
+      <div class="ccard">
+        <div class="dur">40분 · 입문</div>
+        <h3>제주 디퓨저 클래스</h3>
+        <ul>
+          <li>제주 8향 중 하나를 골라 농도 조절</li>
+          <li>200ml 디퓨저 + 리드스틱 세트</li>
+          <li>드라이플라워 데코 포함</li>
+        </ul>
+        <div class="fee">45,000원 <small>/ 1인</small></div>
+      </div>
+      <div class="ccard">
+        <div class="dur">80분 · 2인</div>
+        <h3>커플 &amp; 프러포즈 클래스</h3>
+        <ul>
+          <li>서로에게 어울리는 향을 교차 조향</li>
+          <li>2병 + 우드 케이스 패키지</li>
+          <li>필름 카메라 인화 사진 1장 증정</li>
+        </ul>
+        <div class="fee">139,000원 <small>/ 2인</small></div>
+      </div>
+      <div class="ccard">
+        <div class="dur">협의 · 단체</div>
+        <h3>워크숍 &amp; 기업 출장</h3>
+        <ul>
+          <li>10인 이상 단체·워크숍·MT</li>
+          <li>제주 도내 출장 진행 가능</li>
+          <li>웨딩 답례품 100개 단위 제작</li>
+        </ul>
+        <div class="fee">문의 <small>/ 견적</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== IDEA BOARD ===================== -->
+<section class="section ideas" id="ideas">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Concept Board</div>
+      <h2>골라 쓰시라고 펼쳐둔 아이디어</h2>
+      <p>요구사항 4번에 대한 답입니다. 요즘 향 시장 흐름 + 제주라는 장소성이 겹치는 지점만 모았어요. 마음에 드는 번호를 알려주시면 그 방향으로 다시 구현하겠습니다.</p>
+    </div>
+    <div class="idea-grid" id="ideaGrid"></div>
+
+    <div class="pick-note">
+      <span style="font-size:22px;">🍊</span>
+      <div>
+        <b>고르는 법</b> — 위 카드 중 “이거 1·4·7번으로 가자”처럼 번호만 주셔도 됩니다.
+        선택하신 컨셉에 맞춰 히어로 카피, 제품 탭 구성, 색 팔레트, 지도 위 마커까지 다시 짜드릴게요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== VISIT / MAP ===================== -->
+<section class="section visit" id="visit">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow on-dark">Direction</div>
+      <h2>제주국제공항에서 오시는 길</h2>
+      <p>공항에서 차로 약 15분. 렌터카 없이도 버스 한 번이면 도착합니다. 아래 버튼으로 이동 수단별 경로를 확인해 보세요.</p>
+    </div>
+
+    <div class="map-controls" id="mapControls">
+      <button class="mbtn active" data-mode="car">🚗 렌터카 · 택시</button>
+      <button class="mbtn" data-mode="bus">🚌 시내버스</button>
+      <button class="mbtn" data-mode="walk">🚶 시청 정류장에서 도보</button>
+    </div>
+
+    <div class="map-layout">
+      <div id="map"></div>
+      <div class="map-side" id="mapSide"></div>
+    </div>
+
+    <dl class="info-strip">
+      <div><dt>주소</dt><dd>제주시 신성로10길 3, 1층<small>제주시청 정문에서 도보 3분</small></dd></div>
+      <div><dt>운영시간</dt><dd>11:00 – 20:00<small>매주 화요일 휴무 · 라스트 클래스 19:00</small></dd></div>
+      <div><dt>예약 · 문의</dt><dd class="fill">064-000-0000<small>인스타 DM @hondi_jeju (빈칸 채워주세요)</small></dd></div>
+      <div><dt>주차</dt><dd>인근 공영주차장<small>클래스 참여 시 1시간 무료 정산</small></dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ===================== FAQ ===================== -->
+<section class="section faq">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">FAQ</div>
+      <h2>자주 묻는 것들</h2>
+    </div>
+    <div class="faq-list">
+      <details class="q" open><summary>예약 없이 방문해도 되나요?</summary><p>테이블이 비어 있으면 바로 진행됩니다. 다만 주말 오후는 대부분 차 있어서, 인스타 DM이나 전화로 30분 전에라도 알려주시면 자리를 잡아둡니다.</p></details>
+      <details class="q"><summary>만든 향수를 비행기에 들고 탈 수 있나요?</summary><p>50ml 이하 제품은 기내 반입 가능합니다(1인 총 1L, 개별 100ml 이하 기준). 100ml 디퓨저·룸스프레이는 위탁수하물로 부치시거나, 원하시면 집으로 택배 발송해 드립니다.</p></details>
+      <details class="q"><summary>향에 예민한데 괜찮을까요?</summary><p>공방 환기는 상시 가동하고, 전 제품 알레르기 유발 성분을 라벨에 표기합니다. 임신 중이거나 피부가 예민하시면 알코올 프리 고체향수·룸스프레이 라인으로 안내드려요.</p></details>
+      <details class="q"><summary>아이와 함께 참여할 수 있나요?</summary><p>8세 이상이면 보호자 동반으로 가능합니다. 알코올을 쓰지 않는 왁스 타블렛·고체향수 클래스를 추천드립니다.</p></details>
+      <details class="q"><summary>만든 향을 나중에 다시 살 수 있나요?</summary><p>네. 조향 레시피는 이름과 번호로 저장되어, 이후에는 온라인으로 같은 향을 주문하실 수 있습니다. 공병을 보내주시면 리필가로 계산해 드립니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA ===================== -->
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="eyebrow on-dark" style="text-align:center;">Reservation</div>
+    <h2>제주에서의 하루를<br>향으로 저장하세요</h2>
+    <p>공방은 하루 최대 12팀만 받습니다. 원하는 날짜와 인원을 알려주시면 자리를 확인해 드릴게요.</p>
+    <div class="hero-actions">
+      <a href="tel:0640000000" class="btn btn-primary">전화로 예약하기</a>
+      <a href="#" class="btn btn-ghost">인스타그램 DM</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="logo" style="color:var(--paper); margin-bottom:14px;">
+          <span class="mark">혼디</span><span class="sub">Hondi Jeju</span>
+        </div>
+        <p style="margin:0; max-width:340px;">제주의 순간을 향으로 옮기는 작은 공방.<br>제주시 신성로10길 3, 1층.</p>
+      </div>
+      <div>
+        <h5>Menu</h5>
+        <ul>
+          <li><a href="#story">브랜드 스토리</a></li>
+          <li><a href="#products">제품 컬렉션</a></li>
+          <li><a href="#class">원데이 클래스</a></li>
+          <li><a href="#visit">오시는 길</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <ul>
+          <li class="fill">064-000-0000</li>
+          <li class="fill">hello@hondi.kr</li>
+          <li class="fill">@hondi_jeju</li>
+          <li>11:00–20:00 (화요일 휴무)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 HONDI Jeju Perfume Atelier.</span>
+      <span class="fill">사업자등록번호 · 통신판매업신고번호 (빈칸)</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ============================================================
+   0. 설정 — 이 블록의 값만 바꾸면 페이지 전체가 따라 바뀝니다
+   ============================================================ */
+const CONFIG = {
+  brand: "혼디 HONDI",
+  address: "제주시 신성로10길 3, 1층",
+  // ↓ 실제 간판 위치로 미세 조정하세요 (카카오맵/구글맵에서 좌표 확인 가능)
+  shop:    { lat: 33.49925, lng: 126.53075, label: "혼디 향수공방" },
+  airport: { lat: 33.50664, lng: 126.49275, label: "제주국제공항" },
+  cityhall:{ lat: 33.49960, lng: 126.53120, label: "제주시청" },
+  busStop: { lat: 33.49905, lng: 126.52960, label: "제주시청 정류장" }
+};
+
+/* ============================================================
+   1. 향 라이브러리 — 히어로 카드 회전 + 제품 카드 공용
+   ============================================================ */
+const SCENTS = [
+  { no:"021", ko:"곶자왈",       en:"Gotjawal Forest",  color:"#4C6B44", notes:[["TOP","베르가못 · 유칼립투스",62],["MID","젖은 이끼 · 고사리",88],["BASE","시더우드 · 베티버",74]] },
+  { no:"032", ko:"유채바람",     en:"Canola Breeze",    color:"#E8C33A", notes:[["TOP","유채꽃 · 프리지아",90],["MID","화이트 티 · 배",64],["BASE","화이트 머스크",52]] },
+  { no:"045", ko:"한라 설경",    en:"Snowy Hallasan",   color:"#9FB8C6", notes:[["TOP","페퍼민트 · 유자",70],["MID","소나무 · 주니퍼",82],["BASE","미네랄 앰버",58]] },
+  { no:"057", ko:"감귤창고",     en:"Tangerine Barn",   color:"#EE8A2B", notes:[["TOP","제주 감귤 · 라임",95],["MID","오렌지블라썸",66],["BASE","마른 나무 · 통카빈",60]] },
+  { no:"063", ko:"해녀의 바다",  en:"Haenyeo Sea",      color:"#1E88A8", notes:[["TOP","씨솔트 · 자몽",78],["MID","해조 · 워터리 플로럴",70],["BASE","앰버그리스 · 드리프트우드",84]] },
+  { no:"072", ko:"동백숲",       en:"Camellia Grove",   color:"#B93A38", notes:[["TOP","레드베리 · 만다린",68],["MID","동백 · 로즈",92],["BASE","파우더리 머스크",62]] },
+  { no:"088", ko:"오름의 새벽",  en:"Oreum Dawn",       color:"#8C93A8", notes:[["TOP","이슬 · 그린노트",60],["MID","아이리스 · 안개",86],["BASE","소프트 우드",70]] },
+  { no:"095", ko:"현무암",       en:"Basalt",           color:"#3A403C", notes:[["TOP","블랙페퍼 · 시트러스",58],["MID","스모키 우드",80],["BASE","베티버 · 미네랄",90]] }
+];
+
+/* ============================================================
+   2. 제품 탭 데이터 (요구사항 3번)
+   ============================================================ */
+const CATEGORIES = [
+  {
+    id:"perfume", emo:"🌾", name:"시그니처 퍼퓸",
+    title:"오드퍼퓸 · 제주 8향",
+    desc:"부향률 18%의 오드퍼퓸. 8종 모두 공방에서 시향 후 고르실 수 있고, 원하면 두 향을 섞어 나만의 배합으로도 만듭니다.",
+    priceFrom:"50ml 62,000원부터",
+    items:[
+      { name:"곶자왈", en:"No.021 Gotjawal", color:"#4C6B44", tag:["t-best","BEST"], desc:"비 온 다음 날의 숲 바닥. 흙과 이끼, 삼나무가 오래 남습니다.", price:"62,000원", spec:"50ml / 지속 6h" },
+      { name:"감귤창고", en:"No.057 Tangerine Barn", color:"#EE8A2B", tag:["t-best","BEST"], desc:"수확한 감귤을 쌓아둔 나무 창고. 달지만 끈적이지 않게.", price:"62,000원", spec:"50ml / 지속 5h" },
+      { name:"해녀의 바다", en:"No.063 Haenyeo Sea", color:"#1E88A8", tag:null, desc:"짠 바람과 젖은 돌. 여름에 특히 잘 맞는 아쿠아틱 우디.", price:"62,000원", spec:"50ml / 지속 6h" },
+      { name:"동백숲", en:"No.072 Camellia Grove", color:"#B93A38", tag:["t-limit","겨울 한정"], desc:"11월 카멜리아힐의 붉은 꽃. 파우더리하게 마무리.", price:"66,000원", spec:"50ml / 지속 7h" },
+      { name:"현무암", en:"No.095 Basalt", color:"#3A403C", tag:["t-new","NEW"], desc:"검은 돌담의 무게. 유니섹스 스모키 베티버.", price:"66,000원", spec:"50ml / 지속 8h" },
+      { name:"트래블 세트", en:"Discovery Set", color:"#C9B79A", tag:null, desc:"8종 5ml 미니어처. 고민되면 이걸로 시작하세요.", price:"48,000원", spec:"5ml × 8" }
+    ]
+  },
+  {
+    id:"diffuser", emo:"🪵", name:"디퓨저",
+    title:"리드 디퓨저 · 리필 스테이션",
+    desc:"제주 삼나무 리드스틱을 씁니다. 다 쓴 병을 가져오시면 리필가로 채워드리고, 택배로 보내주셔도 됩니다.",
+    priceFrom:"200ml 38,000원부터",
+    items:[
+      { name:"곶자왈 디퓨저", en:"Gotjawal 200ml", color:"#4C6B44", tag:["t-best","BEST"], desc:"거실에 두면 창을 열어둔 것 같은 초록 냄새가 납니다.", price:"38,000원", spec:"200ml / 8–10주" },
+      { name:"한라 설경 디퓨저", en:"Snowy Hallasan 200ml", color:"#9FB8C6", tag:null, desc:"침실·서재용. 차갑고 조용한 소나무 계열.", price:"38,000원", spec:"200ml / 8–10주" },
+      { name:"미니 디퓨저", en:"Mini 80ml", color:"#D8C9AE", tag:null, desc:"화장실·현관용 소용량. 선물 포장 기본 제공.", price:"19,000원", spec:"80ml / 4주" },
+      { name:"리필 오일", en:"Refill 300ml", color:"#B8A882", tag:["t-new","친환경"], desc:"공병 지참 시 3,000원 추가 할인. 병은 계속 쓰세요.", price:"32,000원", spec:"300ml" },
+      { name:"제주석 스톤 디퓨저", en:"Basalt Stone", color:"#3A403C", tag:["t-limit","수량한정"], desc:"현무암 조각에 오일을 떨어뜨려 쓰는 무전원 방식.", price:"44,000원", spec:"스톤 + 오일 30ml" }
+    ]
+  },
+  {
+    id:"oil", emo:"🫧", name:"아로마 오일",
+    title:"싱글 노트 &amp; 블렌딩 오일",
+    desc:"디퓨저·가습기·목욕물·마사지까지 쓰임이 넓은 라인. 공방에서 직접 블렌딩 비율을 정할 수 있습니다.",
+    priceFrom:"10ml 22,000원부터",
+    items:[
+      { name:"제주 편백 오일", en:"Hinoki 10ml", color:"#6E8B5E", tag:["t-best","BEST"], desc:"제주 편백 수증기 증류 오일. 수면 전 베개 근처에.", price:"26,000원", spec:"10ml / 100% 천연" },
+      { name:"감귤 껍질 오일", en:"Citrus Peel 10ml", color:"#EE8A2B", tag:null, desc:"버려지는 감귤 껍질을 압착해 얻은 냉압착 오일.", price:"22,000원", spec:"10ml / 냉압착" },
+      { name:"슬립 블렌드", en:"Sleep Blend", color:"#7A7FA8", tag:null, desc:"라벤더·편백·베티버. 잠이 얕은 분들께 가장 많이 나갑니다.", price:"29,000원", spec:"10ml" },
+      { name:"포커스 블렌드", en:"Focus Blend", color:"#2FB3A8", tag:["t-new","NEW"], desc:"페퍼민트·로즈마리·유자. 작업실·독서실용.", price:"29,000원", spec:"10ml" },
+      { name:"블렌딩 키트", en:"DIY Blending Kit", color:"#C9B79A", tag:null, desc:"6종 원액 + 캐리어 오일 + 비커. 집에서 이어서 조향.", price:"58,000원", spec:"5ml × 6 + 도구" }
+    ]
+  },
+  {
+    id:"car", emo:"🚗", name:"차량용 방향제",
+    title:"카 프래그런스",
+    desc:"렌터카에서 바로 쓰실 수 있게 무게를 줄이고 누수 없는 구조로 만들었습니다. 여행 기념품으로 가장 많이 나가는 라인.",
+    priceFrom:"16,000원부터",
+    items:[
+      { name:"제주석 카 디퓨저", en:"Basalt Car Stone", color:"#3A403C", tag:["t-best","BEST"], desc:"현무암 조각 + 가죽 스트랩. 룸미러에 걸고 오일 3방울.", price:"32,000원", spec:"스톤 + 오일 10ml" },
+      { name:"송풍구 클립", en:"Vent Clip", color:"#EE8A2B", tag:null, desc:"에어컨 바람으로 은은하게. 리필 카트리지 교체식.", price:"22,000원", spec:"클립 + 리필 2개" },
+      { name:"카 새셰", en:"Car Sachet", color:"#C9B79A", tag:null, desc:"제주 자수 패턴 부직포 향낭. 트렁크·시트 아래.", price:"16,000원", spec:"2개입 / 6주" },
+      { name:"우드 행잉", en:"Wood Hanging", color:"#8B6E4E", tag:["t-new","NEW"], desc:"돌하르방·해녀·감귤 3종 도안 중 선택, 이름 각인 가능.", price:"19,000원", spec:"각인 무료" },
+      { name:"렌터카 3일 세트", en:"Rental Trip Set", color:"#2FB3A8", tag:["t-limit","여행자 전용"], desc:"새셰 + 미니 스프레이. 여행 내내 차 안이 좋습니다.", price:"27,000원", spec:"새셰 1 + 30ml" }
+    ]
+  },
+  {
+    id:"room", emo:"🛏️", name:"룸 &amp; 패브릭",
+    title:"룸 스프레이 · 필로우 미스트",
+    desc:"알코올 함량을 낮춰 침구와 커튼에 직접 뿌려도 얼룩이 지지 않습니다. 아이·반려동물 있는 집을 기준으로 배합했습니다.",
+    priceFrom:"100ml 26,000원부터",
+    items:[
+      { name:"필로우 미스트", en:"Pillow Mist 100ml", color:"#7A7FA8", tag:["t-best","BEST"], desc:"편백·라벤더. 베개에 두 번 뿌리고 눕는 용도.", price:"26,000원", spec:"100ml / 저알코올" },
+      { name:"룸 스프레이", en:"Room Spray 100ml", color:"#4C6B44", tag:null, desc:"곶자왈·감귤창고 중 선택. 현관에 한 번이면 충분.", price:"26,000원", spec:"100ml" },
+      { name:"패브릭 리프레셔", en:"Fabric Refresher", color:"#2FB3A8", tag:null, desc:"소취 성분 포함. 옷장·소파·차 시트 겸용.", price:"29,000원", spec:"200ml" },
+      { name:"펫 세이프 미스트", en:"Pet-safe Mist", color:"#E8C33A", tag:["t-new","NEW"], desc:"에센셜 오일을 빼고 반려동물에게 안전한 향료만 사용.", price:"32,000원", spec:"150ml" }
+    ]
+  },
+  {
+    id:"candle", emo:"🕯️", name:"캔들 &amp; 왁스",
+    title:"소이 캔들 · 왁스 타블렛",
+    desc:"제주 도자 공방과 함께 만든 용기를 씁니다. 캔들을 다 태운 뒤에는 화분이나 소품 트레이로 쓰세요.",
+    priceFrom:"18,000원부터",
+    items:[
+      { name:"현무암 소이 캔들", en:"Basalt Soy Candle", color:"#3A403C", tag:["t-best","BEST"], desc:"거친 표면의 도자 용기. 연소 시간 약 35시간.", price:"48,000원", spec:"200g / 35h" },
+      { name:"감귤 상자 캔들", en:"Tangerine Box", color:"#EE8A2B", tag:null, desc:"감귤 상자를 축소한 우드 용기. 선물용 1순위.", price:"42,000원", spec:"180g / 30h" },
+      { name:"왁스 타블렛", en:"Wax Tablet", color:"#E8DCC2", tag:null, desc:"불을 켜지 않는 방향 왁스. 옷장·신발장·책상 서랍용.", price:"18,000원", spec:"2개입 / 8주" },
+      { name:"동백 티라이트", en:"Camellia Tealight", color:"#B93A38", tag:["t-limit","겨울"], desc:"6개입 세트. 겨울에만 만드는 붉은 왁스.", price:"24,000원", spec:"6개입" }
+    ]
+  },
+  {
+    id:"body", emo:"🤲", name:"고체향수 &amp; 바디",
+    title:"솔리드 퍼퓸 · 핸드 케어",
+    desc:"기내 반입과 휴대가 자유롭고, 향에 예민한 분들도 부담 없는 라인입니다.",
+    priceFrom:"15,000원부터",
+    items:[
+      { name:"고체 향수 틴", en:"Solid Perfume", color:"#C9B79A", tag:["t-best","BEST"], desc:"손목에 문지르는 밤 타입. 8향 전부 제작 가능.", price:"28,000원", spec:"12g / 알코올 프리" },
+      { name:"핸드크림", en:"Hand Cream", color:"#E8C33A", tag:null, desc:"감귤 껍질 추출물. 끈적임 적고 흡수 빠름.", price:"15,000원", spec:"50ml" },
+      { name:"바디 미스트", en:"Body Mist", color:"#2FB3A8", tag:null, desc:"향수가 부담스러울 때. 샤워 후 전신에.", price:"25,000원", spec:"120ml" },
+      { name:"향낭 &amp; 서랍 새셰", en:"Sachet Set", color:"#B8A882", tag:null, desc:"제주 무명천에 담은 드라이 허브. 3개입.", price:"17,000원", spec:"3개입" }
+    ]
+  },
+  {
+    id:"gift", emo:"🎁", name:"기프트 &amp; B2B",
+    title:"선물 · 답례품 · 기업 납품",
+    desc:"웨딩 답례품, 호텔 어메니티, 카페 시그니처 향 개발까지. 100개 단위부터 각인·라벨 커스텀이 가능합니다.",
+    priceFrom:"개당 9,000원부터",
+    items:[
+      { name:"웨딩 답례품 세트", en:"Wedding Favor", color:"#B93A38", tag:["t-best","인기"], desc:"미니 디퓨저 + 이름 라벨. 100개 이상 주문 시 단가 인하.", price:"9,000원~", spec:"100개 단위" },
+      { name:"호텔 · 스테이 어메니티", en:"Stay Amenity", color:"#1E88A8", tag:null, desc:"객실 전용 향 개발부터 라벨 디자인까지 일괄 진행.", price:"견적", spec:"B2B" },
+      { name:"카페 시그니처 향", en:"Space Scenting", color:"#4C6B44", tag:["t-new","NEW"], desc:"매장 컨셉에 맞춘 공간 향 설계 + 디퓨저 정기 배송.", price:"월 구독", spec:"B2B" },
+      { name:"기프트 박스", en:"Gift Box", color:"#EE8A2B", tag:null, desc:"향수 50ml + 고체향수 + 핸드크림. 포장·카드 포함.", price:"98,000원", spec:"3종 세트" }
+    ]
+  }
+];
+
+/* ============================================================
+   3. 컨셉 아이디어 보드 (요구사항 4번)
+   ============================================================ */
+const IDEAS = [
+  { n:"IDEA 01", t:"제주 향 지도 (Scent Map of Jeju)",
+    d:"오름·바다·숲 등 제주 8개 장소를 향으로 번역하고, 벽면에 커다란 향 지도를 겁니다. 손님은 “내가 오늘 다녀온 곳”을 짚어 그 향을 만듭니다.",
+    w:"여행 동선과 제품이 그대로 연결돼 구매 이유가 저절로 생깁니다." },
+  { n:"IDEA 02", t:"향 아카이브 · 레시피 번호제",
+    d:"조향한 배합을 이름+번호로 저장하고, 나중에 온라인에서 같은 번호로 재구매. “No.0347 김ㅇㅇ의 제주”처럼 각인해 드립니다.",
+    w:"1회성 관광 매출을 반복 구매로 바꾸는 가장 확실한 장치입니다." },
+  { n:"IDEA 03", t:"리필 스테이션 · 공병 보증금",
+    d:"매장 한쪽을 리필 바로 꾸미고, 공병을 가져오면 20% 할인. 도민 대상 정기 리필 멤버십도 함께.",
+    w:"제로웨이스트는 지금 향 카테고리에서 가장 강한 구매 명분입니다." },
+  { n:"IDEA 04", t:"논알코올 · 펫 세이프 라인",
+    d:"반려동물·임산부·향 민감층을 위한 무알코올 라인을 아예 별도 브랜드 톤으로 분리해 운영합니다.",
+    w:"제주 여행객 중 반려견 동반 비중이 계속 늘고 있고, 경쟁 공방이 거의 안 다루는 영역입니다." },
+  { n:"IDEA 05", t:"해녀 · 로컬 협업 한정판",
+    d:"해녀회, 감귤 농가, 도자 공방과 시즌마다 한정판을 만들고 판매액 일부를 지역에 환원. 라벨에 협업자 이름을 넣습니다.",
+    w:"‘제주에서 만든’이 아니라 ‘제주 사람과 만든’이 되면 이야기의 힘이 달라집니다." },
+  { n:"IDEA 06", t:"향 취향 진단 → 추천 (1분 퀴즈)",
+    d:"방문 전 온라인에서 5문항을 풀면 추천 향 3종이 나오고, 그 결과를 들고 오면 시향 시간이 확 줄어듭니다.",
+    w:"웹에서 리드를 모으고, 매장 회전율도 같이 올라갑니다." },
+  { n:"IDEA 07", t:"스탬프 여권 · 8향 컬렉팅",
+    d:"제주 향 8종을 모으는 여권형 카드. 다른 지역 여행자는 우편으로, 도민은 방문으로 채웁니다. 다 모으면 각인 보틀 증정.",
+    w:"수집 욕구는 미니어처 판매와 재방문을 동시에 끌어올립니다." },
+  { n:"IDEA 08", t:"공방 = 향 바(Scent Bar) 콘셉트",
+    d:"테이블을 바 형태로 두고 조향사가 바텐더처럼 응대합니다. 시향 3종 + 감귤차 세트를 ‘테이스팅 코스’로 판매.",
+    w:"체험 자체가 콘텐츠가 되어 SNS 노출이 늘고, 객단가도 올릴 수 있습니다." },
+  { n:"IDEA 09", t:"야간 클래스 · 시청 상권 저녁 손님",
+    d:"제주시청 상권 특성을 살려 19:00~21:00 ‘퇴근 후 조향’ 클래스를 엽니다. 도민 정기권 운영.",
+    w:"관광 비수기(1~2월, 6월)의 매출 공백을 도민 수요로 메웁니다." },
+  { n:"IDEA 10", t:"제주 냄새 아카이브 프로젝트",
+    d:"손님들이 남긴 ‘제주에서 기억나는 냄새’ 문장을 벽에 붙여 모으고, 매년 그중 하나를 실제 향으로 출시합니다.",
+    w:"브랜드에 시간이 쌓이는 구조. 언론·매거진이 좋아하는 소재이기도 합니다." }
+];
+
+/* ============================================================
+   4. 오시는 길 경로 데이터
+   ============================================================ */
+const ROUTES = {
+  car: {
+    color:"#EE8A2B",
+    path:[[33.50664,126.49275],[33.50580,126.49560],[33.50310,126.49930],[33.50060,126.50480],[33.49930,126.51350],[33.49900,126.52400],[33.49920,126.53075]],
+    cards:[
+      { ico:"🚗", h:"렌터카", p:"공항 렌터카하우스에서 출발 → 서광로 → 광양사거리 → 제주시청. 내비게이션에 ‘제주시 신성로10길 3’을 찍으면 바로 나옵니다.", t:"약 15분 · 6.5km" },
+      { ico:"🅿️", h:"주차", p:"건물 앞은 주차가 어렵습니다. 제주시청 공영주차장 또는 인근 노상 주차장을 이용해 주세요. 클래스 참여 시 1시간 무료 정산해 드립니다.", t:"공영주차장 도보 3분" },
+      { ico:"🚕", h:"택시", p:"공항 3번 게이트 앞 택시 승강장에서 승차. ‘제주시청 정문’이라고 말씀하시면 됩니다.", t:"약 13분 · 9,000원 내외" }
+    ]
+  },
+  bus: {
+    color:"#2FB3A8",
+    path:[[33.50664,126.49275],[33.50560,126.49700],[33.50210,126.50150],[33.50010,126.50900],[33.49930,126.51800],[33.49900,126.52500],[33.49905,126.52960],[33.49920,126.53075]],
+    cards:[
+      { ico:"🚌", h:"간선버스 365 · 315", p:"공항 정류장에서 승차 후 ‘제주시청’ 정류장 하차. 환승 없이 한 번에 옵니다.", t:"약 25분 · 1,150원" },
+      { ico:"🚏", h:"하차 후", p:"제주시청 정류장에서 내려 시청 정문을 등지고 신성로 방향으로 걸으면 3분 거리입니다.", t:"도보 3분 · 220m" },
+      { ico:"💳", h:"팁", p:"제주 버스는 환승 40분 무료입니다. 숙소가 연동·노형이면 중간에 내려 들르셔도 부담 없습니다.", t:"환승 40분 무료" }
+    ]
+  },
+  walk: {
+    color:"#F2C230",
+    path:[[33.49905,126.52960],[33.49890,126.53010],[33.49910,126.53060],[33.49920,126.53075]],
+    cards:[
+      { ico:"🚶", h:"제주시청 정류장 → 공방", p:"정류장에서 시청 정문 방향으로 50m, 첫 골목에서 우회전 후 직진. 파란 나무문에 작은 감귤색 간판이 걸려 있습니다.", t:"도보 3분 · 220m" },
+      { ico:"🪧", h:"찾는 요령", p:"1층 유리창에 향수병이 줄지어 놓여 있습니다. 간판이 작으니 창문을 보고 찾아 주세요.", t:"1층 · 계단 없음" },
+      { ico:"☕", h:"근처", p:"제주시청 상권이라 카페·식당이 많습니다. 클래스 대기 시간이 있으면 근처에서 쉬셔도 좋아요.", t:"시청 상권 도보권" }
+    ]
+  }
+};
+
+/* ============================================================
+   5. 렌더링
+   ============================================================ */
+(function render(){
+
+  /* --- 5-1. 히어로 향 카드 회전 --- */
+  const scNo = document.getElementById('scNo');
+  const scName = document.getElementById('scName');
+  const scEn = document.getElementById('scEn');
+  const scNotes = document.getElementById('scNotes');
+  let si = 0;
+  function paintScent(i){
+    const s = SCENTS[i];
+    scNo.textContent = 'No.' + s.no;
+    scName.textContent = s.ko;
+    scEn.textContent = s.en;
+    scNotes.innerHTML = s.notes.map(([k,v,w]) =>
+      `<div class="note-row"><b>${k}</b><span style="flex:0 0 auto;min-width:0;">${v}</span><span class="bar"><span style="width:${w}%"></span></span></div>`
+    ).join('');
+    scNo.style.color = s.color;
+  }
+  paintScent(0);
+  setInterval(() => { si = (si + 1) % SCENTS.length; paintScent(si); }, 4000);
+
+  /* --- 5-2. 티커 --- */
+  const words = ['Gotjawal · 곶자왈','Tangerine · 감귤창고','Haenyeo Sea · 해녀의 바다','Camellia · 동백숲','Oreum Dawn · 오름의 새벽','Basalt · 현무암','Canola Breeze · 유채바람','Snowy Hallasan · 한라 설경'];
+  document.getElementById('ticker').innerHTML =
+    [...words, ...words].map(w => `<span>${w}</span>`).join('');
+
+  /* --- 5-3. 제품 탭 --- */
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+
+  tabsEl.innerHTML = CATEGORIES.map((c,i) => `
+    <button class="tab" role="tab" id="tab-${c.id}" aria-controls="panel-${c.id}"
+            aria-selected="${i===0}" data-idx="${i}">
+      <span class="emo">${c.emo}</span>${c.name}
+    </button>`).join('');
+
+  panelsEl.innerHTML = CATEGORIES.map((c,i) => `
+    <div class="panel" role="tabpanel" id="panel-${c.id}" aria-labelledby="tab-${c.id}" ${i===0?'':'hidden'}>
+      <div class="panel-intro">
+        <div>
+          <h3>${c.title}</h3>
+          <p>${c.desc}</p>
+        </div>
+        <div class="price-from">${c.priceFrom}</div>
+      </div>
+      <div class="card-grid">
+        ${c.items.map((p,j) => `
+          <article class="pcard" style="animation-delay:${j*55}ms">
+            <div class="swatch" style="background:${p.color}"></div>
+            ${p.tag ? `<span class="tagline ${p.tag[0]}">${p.tag[1]}</span>`
+                    : `<span class="tagline" style="visibility:hidden">&nbsp;</span>`}
+            <h4>${p.name}</h4>
+            <div class="en">${p.en}</div>
+            <p>${p.desc}</p>
+            <div class="meta"><span class="price">${p.price}</span><span class="spec">${p.spec}</span></div>
+          </article>`).join('')}
+      </div>
+    </div>`).join('');
+
+  tabsEl.addEventListener('click', e => {
+    const btn = e.target.closest('.tab');
+    if(!btn) return;
+    const idx = +btn.dataset.idx;
+    tabsEl.querySelectorAll('.tab').forEach((t,i) => t.setAttribute('aria-selected', i===idx));
+    panelsEl.querySelectorAll('.panel').forEach((p,i) => p.hidden = (i!==idx));
+    // 카드 등장 애니메이션 재생
+    panelsEl.querySelectorAll('.panel')[idx].querySelectorAll('.pcard').forEach(card => {
+      card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
+    });
+  });
+
+  /* --- 5-4. 아이디어 보드 --- */
+  document.getElementById('ideaGrid').innerHTML = IDEAS.map(i => `
+    <div class="icard">
+      <div class="num">${i.n}</div>
+      <h4>${i.t}</h4>
+      <p>${i.d}</p>
+      <div class="why">▲ ${i.w}</div>
+    </div>`).join('');
+
+  /* --- 5-5. 네비게이션 --- */
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 60);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive:true });
+
+  const navLinks = document.getElementById('navLinks');
+  document.getElementById('navToggle').addEventListener('click', () => navLinks.classList.toggle('open'));
+  navLinks.addEventListener('click', e => { if(e.target.tagName === 'A') navLinks.classList.remove('open'); });
+
+})();
+
+/* ============================================================
+   6. 오시는 길 — Leaflet 지도 + 이동수단 안내
+   지도 로딩에 실패해도 안내 카드/탭은 정상 동작합니다.
+   ============================================================ */
+(function initVisit(){
+
+  const sideEl     = document.getElementById('mapSide');
+  const controlsEl = document.getElementById('mapControls');
+  const mapEl      = document.getElementById('map');
+  let drawOnMap    = null;   // 지도 준비되면 주입됨
+
+  /* --- 6-1. 이동수단 안내 카드 (지도와 무관하게 항상 동작) --- */
+  function selectMode(mode){
+    const r = ROUTES[mode];
+    if(!r) return;
+    sideEl.innerHTML = r.cards.map(c => `
+      <div class="route-card">
+        <h4><span class="ico">${c.ico}</span>${c.h}</h4>
+        <p>${c.p}</p>
+        <div class="time">${c.t}</div>
+      </div>`).join('');
+    if(drawOnMap) drawOnMap(mode);
+  }
+
+  controlsEl.addEventListener('click', e => {
+    const b = e.target.closest('.mbtn');
+    if(!b) return;
+    controlsEl.querySelectorAll('.mbtn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    selectMode(b.dataset.mode);
+  });
+
+  selectMode('car');
+
+  /* --- 6-2. Leaflet 지도 --- */
+  if (typeof L === 'undefined'){
+    mapEl.innerHTML =
+      '<div style="height:100%;display:grid;place-items:center;text-align:center;padding:40px;">' +
+      '<div><div style="font-size:32px;margin-bottom:12px;">🗺️</div>' +
+      '<div style="color:#F6F2E9;font-weight:700;margin-bottom:6px;">지도를 불러오지 못했습니다</div>' +
+      '<div style="color:rgba(246,242,233,.55);font-size:14px;line-height:1.7;">' +
+      '인터넷 연결을 확인해 주세요.<br>주소: ' + CONFIG.address + '</div></div></div>';
+    return;
+  }
+
+  const map = L.map(mapEl, { scrollWheelZoom:false, zoomControl:true })
+               .setView([33.5030, 126.5115], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // 물방울 모양 커스텀 핀
+  const pin = (bg, emoji, size) => {
+    size = size || 42;
+    return L.divIcon({
+      className:'',
+      html:'<div style="width:'+size+'px;height:'+size+'px;border-radius:50% 50% 50% 6px;transform:rotate(-45deg);'
+         + 'background:'+bg+';box-shadow:0 6px 18px -6px rgba(0,0,0,.7);border:2px solid rgba(255,255,255,.85);'
+         + 'display:grid;place-items:center;">'
+         + '<span style="transform:rotate(45deg);font-size:'+Math.round(size*0.44)+'px;line-height:1;">'+emoji+'</span>'
+         + '</div>',
+      iconSize:[size,size], iconAnchor:[size/2, size], popupAnchor:[0, -size+6]
+    });
+  };
+
+  L.marker([CONFIG.airport.lat, CONFIG.airport.lng], { icon: pin('#0F7C7A','✈️') })
+   .addTo(map)
+   .bindPopup('<b>제주국제공항</b>출발지 · 3번 게이트 앞 버스 / 택시 승강장');
+
+  L.circleMarker([CONFIG.cityhall.lat, CONFIG.cityhall.lng], {
+    radius:7, color:'#F2C230', fillColor:'#F2C230', fillOpacity:.9, weight:2
+  }).addTo(map).bindPopup('<b>제주시청</b>공방까지 도보 3분');
+
+  L.circleMarker([CONFIG.busStop.lat, CONFIG.busStop.lng], {
+    radius:6, color:'#2FB3A8', fillColor:'#2FB3A8', fillOpacity:.9, weight:2
+  }).addTo(map).bindPopup('<b>제주시청 정류장</b>365 · 315번 하차');
+
+  const shopMarker = L.marker([CONFIG.shop.lat, CONFIG.shop.lng], { icon: pin('#EE8A2B','🌾', 48) })
+   .addTo(map)
+   .bindPopup('<b>' + CONFIG.shop.label + '</b>' + CONFIG.address + '<br>11:00–20:00 · 화요일 휴무');
+
+  let routeLayer = null;
+  drawOnMap = function(mode){
+    const r = ROUTES[mode];
+    if(routeLayer) map.removeLayer(routeLayer);
+    const line = L.polyline(r.path);
+    routeLayer = L.layerGroup([
+      L.polyline(r.path, { color:'#000', weight:9, opacity:.28 }),
+      L.polyline(r.path, { color:r.color, weight:5, opacity:.95, lineJoin:'round',
+                           dashArray: mode === 'walk' ? '2 10' : null,
+                           lineCap:  mode === 'walk' ? 'round' : 'butt' })
+    ]).addTo(map);
+    map.fitBounds(line.getBounds(), { padding:[55,55], maxZoom:17 });
+  };
+
+  // 처음 선택된 모드를 지도에도 반영
+  const activeBtn = controlsEl.querySelector('.mbtn.active');
+  drawOnMap(activeBtn ? activeBtn.dataset.mode : 'car');
+
+  // 지도를 클릭했을 때만 휠 줌 허용 (페이지 스크롤 방해 방지)
+  map.on('click', () => map.scrollWheelZoom.enable());
+  map.on('mouseout', () => map.scrollWheelZoom.disable());
+
+  setTimeout(() => { map.invalidateSize(); shopMarker.openPopup(); }, 400);
+})();
+</script>
+</body>
+</html>
